@@ -24,5 +24,7 @@ class WarehouseEntity(
     val code: String,
 
     @Column(name = "created_at", nullable = false)
-    val createdAt: OffsetDateTime = OffsetDateTime.now()
+    val createdAt: OffsetDateTime = OffsetDateTime.now(),
+    @Column(name = "erp_location_code", nullable = false)
+    val erpLocationCode: String
 )

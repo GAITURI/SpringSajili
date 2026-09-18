@@ -19,6 +19,9 @@ class ProductEntity(
     @Column(nullable = false)
     val sku: String,
 
+    @Column(name="erp_item_code", nullable = false, unique = true)
+    val erpItemCode: String,
+
     @Column(nullable = false)
     val name: String,
 

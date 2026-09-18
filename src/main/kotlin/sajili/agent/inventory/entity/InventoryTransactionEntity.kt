@@ -5,6 +5,18 @@ import java.math.BigDecimal
 import java.time.OffsetDateTime
 import java.util.UUID
 
+
+
+
+enum class SyncStatus{
+    PENDING,
+    SYNCED,
+    FAILED_RETRYABLE,
+    FAILED_PERMANENT
+}
+
+
+
 @Entity
 @Table(name = "inventory_transactions")
 class InventoryTransactionEntity(
@@ -43,5 +55,17 @@ class InventoryTransactionEntity(
     val idempotencyKey: String?,
 
     @Column(name = "created_at", nullable = false)
-    val createdAt: OffsetDateTime = OffsetDateTime.now()
+    val createdAt: OffsetDateTime = OffsetDateTime.now(),
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable=false)
+     var syncStatus: SyncStatus= SyncStatus.PENDING,
+
+    @Column(nullable = false)
+    var syncRetryCount:Int =0,
+
+    @Column(columnDefinition = "TEXT")
+    var erpSyncError:String? =null,
+
+    var nextRetryAt: OffsetDateTime?=null,
 )

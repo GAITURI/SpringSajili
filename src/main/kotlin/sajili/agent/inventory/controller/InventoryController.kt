@@ -12,7 +12,9 @@ import sajili.agent.inventory.dto.ReceiveStockRequest
 import sajili.agent.inventory.dto.TransferStockRequest
 import sajili.agent.inventory.entity.InventoryTransactionEntity
 import sajili.agent.inventory.service.InventoryService
-
+//When a field agent submits stock movements from the Android app,
+// the request lands in InventoryController.
+//The controller delegates the work directly to InventoryService.
 
 @RestController
 @RequestMapping("/api/inventory")
