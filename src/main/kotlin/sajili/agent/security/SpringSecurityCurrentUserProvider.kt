@@ -6,7 +6,8 @@ import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.stereotype.Component
 import sajili.agent.user.repository.UserProfileRepository
 
-
+//it explicitly expects the principal to be an OAuth2 Jwt token
+//provided by Spring Security's resource server support:
 @Component
 class SpringSecurityCurrentUserProvider(private val userProfileRepository: UserProfileRepository): CurrentUserProvider {
     override fun getCurrentUser(): AuthenticatedUsers {

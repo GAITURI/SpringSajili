@@ -36,15 +36,15 @@ public class FirebaseConfig {
            .build() //->finalizes the creation of the FirebaseOptions object
         return  FirebaseApp.initializeApp(options) //-> returns the initialized FirebaseApp instance to be used as a Spring bean
     }
-<<<<<<< HEAD
 
-=======
+
+
     @Bean
     fun firebaseAuth(firebaseApp: FirebaseApp): FirebaseAuth{
 
         return FirebaseAuth.getInstance(firebaseApp) //returns the FirebaseAuth instance as a bean
     }
->>>>>>> 03cfdcc46b34b0c5e4d17c3ca196dedeab85b2b0
+
 
 }
 //@Configuration- is a class level annotation

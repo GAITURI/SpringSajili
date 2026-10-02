@@ -1,5 +1,6 @@
 package sajili.agent.inventory.service
 
+import com.google.firebase.database.core.view.View
 import jakarta.transaction.Transactional
 import org.springframework.stereotype.Service
 import sajili.agent.inventory.dto.AdjustStockRequest
@@ -8,6 +9,7 @@ import sajili.agent.inventory.dto.ReceiveStockRequest
 import sajili.agent.inventory.dto.TransferStockRequest
 import sajili.agent.inventory.entity.InventoryBalanceEntity
 import sajili.agent.inventory.entity.InventoryTransactionEntity
+import sajili.agent.inventory.entity.OperationResults
 import sajili.agent.inventory.repository.InventoryBalanceRepository
 import sajili.agent.inventory.repository.InventoryTransactionRepository
 import sajili.agent.product.entity.ProductRepository
@@ -29,7 +31,10 @@ class InventoryService(
 
 {
     @Transactional
-    fun receiveStock(request: ReceiveStockRequest): InventoryTransactionEntity{
+    fun receiveStock(request: ReceiveStockRequest): OperationResults<InventoryTransactionEntity> {
+        transactionRepository.findByIdempotencyKey(request.idempotencyKey.toString())?.let{
+            return OperationResults(it, isNew = false)
+        }
         val currentUser= currentUserProvider.getCurrentUser()
 
 //        enforce tenant and warehouse boundaries
@@ -44,7 +49,7 @@ class InventoryService(
 //        acquire pessimistic write lock on the Inventory Balance Row
         var balance= balanceRepository.findByTenantIdAndWarehouseIDAndProductIdLocked(request.warehouseId,request.productId)
         if (balance== null){
-//            if balance record doesnt exist yet for this product in this warehouse, create it
+//            if balance record doesn't exist yet for this product in this warehouse, create it
             balance= InventoryBalanceEntity(
                 tenantId = currentUser.tenantId,
                 warehouseId= warehouse.id!!,
@@ -73,13 +78,17 @@ class InventoryService(
 
 
         )
-
-        return transactionRepository.save(transaction)
+        val savedTransaction=transactionRepository.save(transaction)
+        return OperationResults(savedTransaction, isNew = true)
     }
 
 
     @Transactional
-    fun issueStock(request: IssueStockRequest): InventoryTransactionEntity{
+    fun issueStock(request: IssueStockRequest): OperationResults<InventoryTransactionEntity>{
+        // Check if this is a network retry (idempotency hit)
+        transactionRepository.findByIdempotencyKey(request.idempotencyKey.toString())?.let {
+            return OperationResults(it, isNew = false)
+        }
         val currentUser= currentUserProvider.getCurrentUser()
 
         securityValidator.validateWarehouseAccess(currentUser, request.warehouseId)
@@ -91,7 +100,9 @@ class InventoryService(
             .orElseThrow{ IllegalArgumentException("Warehouse not found: ${request.warehouseId}") }
 
 //   Lock balance row to prevent race conditions during concurrent issues
-        val balance = balanceRepository.findByTenantIdAndWarehouseIDAndProductIdLocked(request.warehouseId, request.productId)
+        val balance = balanceRepository.findByTenantIdAndWarehouseIDAndProductIdLocked(
+            request.warehouseId, request.productId,
+        )
             ?:throw IllegalStateException("Inventory balance record does not exist for this product in this warehouse")
         if(balance.quantity < request.quantity){
             throw IllegalStateException("Insufficient stock. Available{${balance.quantity},Requested: ${request.quantity}}")
@@ -114,7 +125,8 @@ class InventoryService(
             idempotencyKey = request.idempotencyKey,
 
         )
-    return transactionRepository.save(transaction)
+        val savedTransaction = transactionRepository.save(transaction)
+        return OperationResults(savedTransaction, isNew = true)
     }
     @Transactional
     fun adjustStock(request: AdjustStockRequest): InventoryTransactionEntity {
@@ -174,7 +186,7 @@ class InventoryService(
             .orElseThrow { IllegalArgumentException("Destination warehouse not found") }
 
         // 1. Deduct from Source Warehouse
-        val sourceBalance = balanceRepository.findByTenantIdAndWarehouseIDAndProductIdLocked(request.sourceWarehouseId, request.productId)
+        val sourceBalance = balanceRepository.findByTenantIdAndWarehouseIDAndProductIdLocked(request.sourceWarehouseId, request.productId,)
             ?: throw IllegalStateException("No inventory balance found at source warehouse.")
 
         if (sourceBalance.quantity < request.quantity) {

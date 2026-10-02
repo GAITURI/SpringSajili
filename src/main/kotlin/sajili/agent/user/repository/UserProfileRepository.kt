@@ -7,5 +7,5 @@ import java.util.UUID
 
 @Repository
 interface UserProfileRepository : JpaRepository<UserProfileEntity, UUID>{
-    fun findByAuthSubject(authSubject: String): UserProfileEntity
+    fun findByAuthSubject(authSubject: String): UserProfileEntity?
 }

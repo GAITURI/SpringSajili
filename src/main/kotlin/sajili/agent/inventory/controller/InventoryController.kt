@@ -19,17 +19,18 @@ import sajili.agent.inventory.service.InventoryService
 @RestController
 @RequestMapping("/api/inventory")
 class InventoryController(private val inventoryService: InventoryService) {
-
     @PostMapping("/receive")
-    fun receiveStock(@RequestBody request: ReceiveStockRequest): ResponseEntity<InventoryTransactionEntity>{
-        val transaction= inventoryService.receiveStock(request)
-        return ResponseEntity.status(HttpStatus.CREATED).body(transaction)
+    fun receiveStock(@RequestBody request: ReceiveStockRequest): ResponseEntity<InventoryTransactionEntity> {
+        val result = inventoryService.receiveStock(request)
+        val status = if (result.isNew) HttpStatus.CREATED else HttpStatus.OK
+        return ResponseEntity.status(status).body(result.entity)
     }
 
     @PostMapping("/issue")
     fun issueStock(@RequestBody request: IssueStockRequest): ResponseEntity<InventoryTransactionEntity>{
-        val transaction= inventoryService.issueStock(request)
-        return ResponseEntity.status(HttpStatus.CREATED).body(transaction)
+        val result= inventoryService.issueStock(request)
+        val status = if (result.isNew) HttpStatus.CREATED else HttpStatus.OK
+        return ResponseEntity.status(status).body(result.entity)
     }
     @PostMapping("/adjust")
     fun adjustStock(@RequestBody request: AdjustStockRequest): ResponseEntity<InventoryTransactionEntity>{
